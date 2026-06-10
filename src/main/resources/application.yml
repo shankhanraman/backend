@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: arogya-cafe-backend
+  profiles:
+    active: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    jwt:
+      # Override in production via APP_SECURITY_JWT_SECRET. Must be >= 32 bytes for HS256.
+      secret: ${APP_SECURITY_JWT_SECRET:change-me-dev-only-secret-key-please-rotate-32b}
+      expiration-minutes: 480
+
+logging:
+  level:
+    org.flywaydb: info

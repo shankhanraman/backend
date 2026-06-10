@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/arogya_cafe
+    username: ${POSTGRES_USER:cafe}
+    password: ${POSTGRES_PASSWORD:cafe}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# Loads worked-example demo data on startup (dev only).
+app:
+  seed:
+    enabled: true
