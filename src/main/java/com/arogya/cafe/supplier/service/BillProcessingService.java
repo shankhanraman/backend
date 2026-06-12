@@ -117,8 +117,9 @@ public class BillProcessingService {
         if (req.lineItems() == null || req.lineItems().isEmpty()) {
             throw new BusinessRuleException("Add at least one line item");
         }
-        Supplier supplier = supplierRepository.save(
-                new Supplier(req.vendorName().trim(), req.vendorContact() != null ? req.vendorContact().trim() : ""));
+        Supplier supplier = supplierRepository.save(new Supplier(
+                req.vendorName().trim(),
+                req.vendorContact() != null ? req.vendorContact().trim() : ""));
 
         List<ProcessedLineItem> processed = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -150,7 +151,11 @@ public class BillProcessingService {
                 total = total.add(l.unitPrice().multiply(qty));
             }
             processed.add(new ProcessedLineItem(
-                    ingredient.getName(), ingredient.getUnit(), l.quantity(), l.unitPrice(), stock.getQtyOnHand(),
+                    ingredient.getName(),
+                    ingredient.getUnit(),
+                    l.quantity(),
+                    l.unitPrice(),
+                    stock.getQtyOnHand(),
                     txn.getId()));
         }
         return new ProcessedBillResponse(
@@ -173,11 +178,7 @@ public class BillProcessingService {
     public record CommitLine(String ingredientName, String unit, Integer quantity, BigDecimal unitPrice) {}
 
     public record CommitRequest(
-            String vendorName,
-            String vendorContact,
-            String billNumber,
-            String billDate,
-            List<CommitLine> lineItems) {}
+            String vendorName, String vendorContact, String billNumber, String billDate, List<CommitLine> lineItems) {}
 
     private Supplier findOrCreateSupplier(BillScannerClient.BillData billData) {
         String vendorName = billData.getVendorName();

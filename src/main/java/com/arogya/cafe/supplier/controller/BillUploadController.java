@@ -6,6 +6,7 @@ import com.arogya.cafe.supplier.client.*;
 import com.arogya.cafe.supplier.service.*;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,7 +30,7 @@ public class BillUploadController {
      * @param engine OCR engine: "auto" (default), "glmocr", "tesseract", "gemini"
      * @return Processed bill with created supplier, ingredients, and stock transactions
      */
-    @PostMapping("/process")
+    @PostMapping(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BillProcessingService.ProcessedBillResponse> processBill(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "engine", required = false, defaultValue = "auto") String engine) {
@@ -52,7 +53,7 @@ public class BillUploadController {
      * Scan a bill and return the extracted fields for review/editing — does NOT write to the
      * database. The UI shows this, the user corrects it (e.g. adds a missing vendor), then commits.
      */
-    @PostMapping("/scan")
+    @PostMapping(value = "/scan", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> scanOnly(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "engine", required = false, defaultValue = "auto") String engine) {

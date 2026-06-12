@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/arogya_cafe
-    username: ${POSTGRES_USER:cafe}
-    password: ${POSTGRES_PASSWORD:cafe}
+    url: jdbc:postgresql://127.0.0.1:5433/cafe
+    username: postgres
+    password: 123456789
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
