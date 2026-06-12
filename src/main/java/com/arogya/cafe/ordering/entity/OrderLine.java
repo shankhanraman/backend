@@ -34,8 +34,7 @@ public class OrderLine extends BaseEntity {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    protected OrderLine() {
-    }
+    protected OrderLine() {}
 
     public OrderLine(Order order, MenuItem menuItem, String sizeVariant, int quantity, BigDecimal unitPrice) {
         this.order = order;

@@ -34,25 +34,28 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+        http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
+                .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/api/auth/login",
                                 "/error",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/actuator/health"
-                        ).permitAll()
+                                "/actuator/health")
+                        .permitAll()
                         // Workflow transitions are role-gated at the URL level (method + path).
-                        .requestMatchers(HttpMethod.POST, "/api/orders/*/serve").hasAnyRole("SERVER", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/kots/*/prepare").hasAnyRole("CHEF", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/bills/*/pay").hasAnyRole("CASHIER", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CASHIER", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/serve")
+                        .hasAnyRole("SERVER", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/kots/*/prepare")
+                        .hasAnyRole("CHEF", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/bills/*/pay")
+                        .hasAnyRole("CASHIER", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders")
+                        .hasAnyRole("CASHIER", "MANAGER")
                         // Everything else (catalog/inventory CRUD, reads) is open to any authenticated staff.
-                        .anyRequest().authenticated())
+                        .anyRequest()
+                        .authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

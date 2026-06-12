@@ -17,8 +17,7 @@ public class Ingredient extends BaseEntity {
     @Column(nullable = false)
     private String unit;
 
-    protected Ingredient() {
-    }
+    protected Ingredient() {}
 
     public Ingredient(String name, String unit) {
         this.name = name;

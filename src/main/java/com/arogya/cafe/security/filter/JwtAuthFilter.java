@@ -1,8 +1,7 @@
 package com.arogya.cafe.security.filter;
-import com.arogya.cafe.security.service.JwtService;
-import com.arogya.cafe.security.entity.Staff;
-import com.arogya.cafe.security.entity.*;
 
+import com.arogya.cafe.security.entity.*;
+import com.arogya.cafe.security.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,10 +26,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")
+        if (header != null
+                && header.startsWith("Bearer ")
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             String token = header.substring(7);
             String username = jwt.validateAndGetUsername(token);

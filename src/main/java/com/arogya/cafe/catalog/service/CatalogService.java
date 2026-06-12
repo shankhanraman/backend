@@ -1,11 +1,11 @@
 package com.arogya.cafe.catalog.service;
-import com.arogya.cafe.catalog.repository.*;
-import com.arogya.cafe.catalog.entity.*;
 
 import com.arogya.cafe.catalog.dto.CatalogDtos.CategoryRequest;
 import com.arogya.cafe.catalog.dto.CatalogDtos.IngredientRequest;
 import com.arogya.cafe.catalog.dto.CatalogDtos.ItemIngredientRequest;
 import com.arogya.cafe.catalog.dto.CatalogDtos.MenuItemRequest;
+import com.arogya.cafe.catalog.entity.*;
+import com.arogya.cafe.catalog.repository.*;
 import com.arogya.cafe.common.exception.NotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -20,8 +20,11 @@ public class CatalogService {
     private final IngredientRepository ingredients;
     private final ItemIngredientRepository itemIngredients;
 
-    public CatalogService(CategoryRepository categories, MenuItemRepository menuItems,
-                          IngredientRepository ingredients, ItemIngredientRepository itemIngredients) {
+    public CatalogService(
+            CategoryRepository categories,
+            MenuItemRepository menuItems,
+            IngredientRepository ingredients,
+            ItemIngredientRepository itemIngredients) {
         this.categories = categories;
         this.menuItems = menuItems;
         this.ingredients = ingredients;

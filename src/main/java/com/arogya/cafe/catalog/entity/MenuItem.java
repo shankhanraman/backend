@@ -28,8 +28,7 @@ public class MenuItem extends BaseEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    protected MenuItem() {
-    }
+    protected MenuItem() {}
 
     public MenuItem(String name, String sizeVariant, BigDecimal price, Category category) {
         this.name = name;

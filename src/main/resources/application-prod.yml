@@ -1,0 +1,25 @@
+# Production profile. Datasource + JWT secret are injected as environment variables by
+# docker-compose.prod.yml (SPRING_DATASOURCE_*, APP_SECURITY_JWT_SECRET) — never hard-coded here.
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+# No demo data in production.
+app:
+  seed:
+    enabled: false
+
+# Actuator: expose only the health endpoint (already permitAll in SecurityConfig).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

@@ -1,17 +1,17 @@
 package com.arogya.cafe.config;
 
 import com.arogya.cafe.catalog.entity.Category;
-import com.arogya.cafe.catalog.repository.CategoryRepository;
 import com.arogya.cafe.catalog.entity.Ingredient;
-import com.arogya.cafe.catalog.repository.IngredientRepository;
 import com.arogya.cafe.catalog.entity.ItemIngredient;
-import com.arogya.cafe.catalog.repository.ItemIngredientRepository;
 import com.arogya.cafe.catalog.entity.MenuItem;
+import com.arogya.cafe.catalog.repository.CategoryRepository;
+import com.arogya.cafe.catalog.repository.IngredientRepository;
+import com.arogya.cafe.catalog.repository.ItemIngredientRepository;
 import com.arogya.cafe.catalog.repository.MenuItemRepository;
 import com.arogya.cafe.common.enums.StaffRole;
 import com.arogya.cafe.inventory.entity.InventoryStock;
-import com.arogya.cafe.inventory.repository.InventoryStockRepository;
 import com.arogya.cafe.inventory.entity.Supplier;
+import com.arogya.cafe.inventory.repository.InventoryStockRepository;
 import com.arogya.cafe.inventory.repository.SupplierRepository;
 import com.arogya.cafe.ordering.entity.Customer;
 import com.arogya.cafe.ordering.repository.CustomerRepository;
@@ -46,10 +46,16 @@ public class DataSeeder implements CommandLineRunner {
     private final StaffRepository staff;
     private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(CategoryRepository categories, IngredientRepository ingredients, MenuItemRepository menuItems,
-                      ItemIngredientRepository itemIngredients, InventoryStockRepository stocks,
-                      SupplierRepository suppliers, CustomerRepository customers, StaffRepository staff,
-                      PasswordEncoder passwordEncoder) {
+    public DataSeeder(
+            CategoryRepository categories,
+            IngredientRepository ingredients,
+            MenuItemRepository menuItems,
+            ItemIngredientRepository itemIngredients,
+            InventoryStockRepository stocks,
+            SupplierRepository suppliers,
+            CustomerRepository customers,
+            StaffRepository staff,
+            PasswordEncoder passwordEncoder) {
         this.categories = categories;
         this.ingredients = ingredients;
         this.menuItems = menuItems;
@@ -98,7 +104,8 @@ public class DataSeeder implements CommandLineRunner {
         // Default walk-in customer
         customers.save(new Customer("Walk-in", "NA"));
 
-        log.info("Seeded worked-example data. Logins (password '{}'): manager / cashier / chef / server",
+        log.info(
+                "Seeded worked-example data. Logins (password '{}'): manager / cashier / chef / server",
                 DEFAULT_PASSWORD);
     }
 

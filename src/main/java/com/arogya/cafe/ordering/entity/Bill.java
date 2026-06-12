@@ -32,8 +32,7 @@ public class Bill extends BaseEntity {
     @Column(name = "billed_at", nullable = false)
     private Instant billedAt = Instant.now();
 
-    protected Bill() {
-    }
+    protected Bill() {}
 
     public Bill(Order order, BigDecimal totalAmount) {
         this.order = order;

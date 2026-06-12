@@ -29,8 +29,7 @@ public class Staff extends BaseEntity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    protected Staff() {
-    }
+    protected Staff() {}
 
     public Staff(String name, StaffRole role, String username, String passwordHash) {
         this.name = name;

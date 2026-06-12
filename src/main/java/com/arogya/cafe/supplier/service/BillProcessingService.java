@@ -1,24 +1,23 @@
 package com.arogya.cafe.supplier.service;
-import com.arogya.cafe.supplier.*;
-import com.arogya.cafe.supplier.client.*;
 
 import com.arogya.cafe.catalog.entity.Ingredient;
 import com.arogya.cafe.catalog.repository.IngredientRepository;
-import com.arogya.cafe.inventory.entity.InventoryStock;
-import com.arogya.cafe.inventory.repository.InventoryStockRepository;
-import com.arogya.cafe.inventory.entity.StockTransaction;
-import com.arogya.cafe.inventory.repository.StockTransactionRepository;
-import com.arogya.cafe.inventory.entity.Supplier;
-import com.arogya.cafe.inventory.repository.SupplierRepository;
 import com.arogya.cafe.common.enums.StockTransactionType;
-import com.arogya.cafe.common.exception.NotFoundException;
 import com.arogya.cafe.common.exception.BusinessRuleException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.arogya.cafe.inventory.entity.InventoryStock;
+import com.arogya.cafe.inventory.entity.StockTransaction;
+import com.arogya.cafe.inventory.entity.Supplier;
+import com.arogya.cafe.inventory.repository.InventoryStockRepository;
+import com.arogya.cafe.inventory.repository.StockTransactionRepository;
+import com.arogya.cafe.inventory.repository.SupplierRepository;
+import com.arogya.cafe.supplier.*;
+import com.arogya.cafe.supplier.client.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -77,9 +76,108 @@ public class BillProcessingService {
                 billData.getBillDate(),
                 billData.getTotal(),
                 processedItems,
-                scanResponse.warnings
-        );
+                scanResponse.warnings);
     }
+
+    /**
+     * Scan a bill and return the extracted fields WITHOUT touching the database. Lets the UI show
+     * the OCR result for review/correction (add a missing vendor, fix items) before committing.
+     */
+    public ScanPreview scanPreview(org.springframework.web.multipart.MultipartFile billFile, String engine) {
+        BillScannerClient.ScanResponse scan = billScannerClient.scanBill(billFile, engine);
+        if (!scan.success) {
+            throw new BillScannerException("Bill scanning failed");
+        }
+        BillScannerClient.BillData d = scan.data;
+        List<PreviewLine> lines = new ArrayList<>();
+        if (d.getLineItems() != null) {
+            for (BillScannerClient.LineItem li : d.getLineItems()) {
+                lines.add(new PreviewLine(li.getDescription(), li.getQuantity(), li.getUnitPrice()));
+            }
+        }
+        return new ScanPreview(
+                scan.engine_used,
+                d.getVendorName(),
+                d.getVendorContact(),
+                d.getBillNumber(),
+                d.getBillDate(),
+                d.getTotal(),
+                lines,
+                scan.warnings != null ? scan.warnings : List.of());
+    }
+
+    /**
+     * Commit a reviewed/edited bill: create the supplier, then find-or-create each ingredient by
+     * name and restock it. No OCR here — the data comes from the (corrected) UI form.
+     */
+    public ProcessedBillResponse commitBill(CommitRequest req) {
+        if (req.vendorName() == null || req.vendorName().isBlank()) {
+            throw new BusinessRuleException("Vendor name is required");
+        }
+        if (req.lineItems() == null || req.lineItems().isEmpty()) {
+            throw new BusinessRuleException("Add at least one line item");
+        }
+        Supplier supplier = supplierRepository.save(
+                new Supplier(req.vendorName().trim(), req.vendorContact() != null ? req.vendorContact().trim() : ""));
+
+        List<ProcessedLineItem> processed = new ArrayList<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (CommitLine l : req.lineItems()) {
+            if (l.ingredientName() == null || l.ingredientName().isBlank()) {
+                continue;
+            }
+            if (l.quantity() == null || l.quantity() <= 0) {
+                throw new BusinessRuleException("Quantity must be greater than 0 for " + l.ingredientName());
+            }
+            String name = l.ingredientName().trim();
+            String unit = l.unit() != null && !l.unit().isBlank() ? l.unit().trim() : "units";
+            Ingredient ingredient = ingredientRepository
+                    .findByNameIgnoreCase(name)
+                    .orElseGet(() -> ingredientRepository.save(new Ingredient(name, unit)));
+
+            InventoryStock stock = inventoryStockRepository.findByIngredientId(ingredient.getId());
+            if (stock == null) {
+                stock = inventoryStockRepository.save(new InventoryStock(ingredient, BigDecimal.ZERO, BigDecimal.TEN));
+            }
+            BigDecimal qty = new BigDecimal(l.quantity());
+            StockTransaction txn = stockTransactionRepository.save(new StockTransaction(
+                    stock, StockTransactionType.RESTOCKED, qty, "Bill upload: " + supplier.getName(), supplier, null));
+            stock.setQtyOnHand(stock.getQtyOnHand().add(qty));
+            stock.setLastUpdated(Instant.now());
+            inventoryStockRepository.save(stock);
+
+            if (l.unitPrice() != null) {
+                total = total.add(l.unitPrice().multiply(qty));
+            }
+            processed.add(new ProcessedLineItem(
+                    ingredient.getName(), ingredient.getUnit(), l.quantity(), l.unitPrice(), stock.getQtyOnHand(),
+                    txn.getId()));
+        }
+        return new ProcessedBillResponse(
+                "reviewed", supplier, req.billNumber(), req.billDate(), total, processed, List.of());
+    }
+
+    // ---- Review/commit DTOs ----
+    public record PreviewLine(String description, Integer quantity, BigDecimal unitPrice) {}
+
+    public record ScanPreview(
+            String engine,
+            String vendorName,
+            String vendorContact,
+            String billNumber,
+            String billDate,
+            BigDecimal totalAmount,
+            List<PreviewLine> lineItems,
+            List<String> warnings) {}
+
+    public record CommitLine(String ingredientName, String unit, Integer quantity, BigDecimal unitPrice) {}
+
+    public record CommitRequest(
+            String vendorName,
+            String vendorContact,
+            String billNumber,
+            String billDate,
+            List<CommitLine> lineItems) {}
 
     private Supplier findOrCreateSupplier(BillScannerClient.BillData billData) {
         String vendorName = billData.getVendorName();
@@ -116,10 +214,8 @@ public class BillProcessingService {
         InventoryStock stock = inventoryStockRepository.findByIngredientId(ingredient.getId());
         if (stock == null) {
             stock = new InventoryStock(
-                    ingredient,
-                    BigDecimal.ZERO,
-                    BigDecimal.TEN  // Default reorder threshold
-            );
+                    ingredient, BigDecimal.ZERO, BigDecimal.TEN // Default reorder threshold
+                    );
             stock = inventoryStockRepository.save(stock);
         }
 
@@ -130,8 +226,8 @@ public class BillProcessingService {
                 new BigDecimal(quantity),
                 "bill_upload",
                 supplier,
-                null  // No order associated with bill upload
-        );
+                null // No order associated with bill upload
+                );
         transaction = stockTransactionRepository.save(transaction);
 
         // Step 4: Update inventory stock quantity
@@ -145,15 +241,14 @@ public class BillProcessingService {
                 quantity,
                 unitPrice,
                 stock.getQtyOnHand(),
-                transaction.getId()
-        );
+                transaction.getId());
     }
 
     private Ingredient findOrCreateIngredient(String name) {
         // Try to find existing ingredient
         // For now, assume we need to create new ones from bills
         // In production, you might want to fuzzy-match or require manual mapping
-        Ingredient ingredient = new Ingredient(name, "units");  // Default unit; could improve this
+        Ingredient ingredient = new Ingredient(name, "units"); // Default unit; could improve this
         return ingredientRepository.save(ingredient);
     }
 
@@ -167,8 +262,14 @@ public class BillProcessingService {
         public List<ProcessedLineItem> lineItems;
         public List<String> warnings;
 
-        public ProcessedBillResponse(String engine, Supplier supplier, String billNumber, String billDate,
-                                    BigDecimal totalAmount, List<ProcessedLineItem> lineItems, List<String> warnings) {
+        public ProcessedBillResponse(
+                String engine,
+                Supplier supplier,
+                String billNumber,
+                String billDate,
+                BigDecimal totalAmount,
+                List<ProcessedLineItem> lineItems,
+                List<String> warnings) {
             this.engine = engine;
             this.supplier = supplier;
             this.billNumber = billNumber;
@@ -187,8 +288,13 @@ public class BillProcessingService {
         public BigDecimal newStockLevel;
         public Long transactionId;
 
-        public ProcessedLineItem(String ingredientName, String unit, Integer quantity,
-                               BigDecimal unitPrice, BigDecimal newStockLevel, Long transactionId) {
+        public ProcessedLineItem(
+                String ingredientName,
+                String unit,
+                Integer quantity,
+                BigDecimal unitPrice,
+                BigDecimal newStockLevel,
+                Long transactionId) {
             this.ingredientName = ingredientName;
             this.unit = unit;
             this.quantity = quantity;

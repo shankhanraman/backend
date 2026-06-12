@@ -35,10 +35,10 @@ public class ItemIngredient extends BaseEntity {
     @Column(name = "size_variant")
     private String sizeVariant;
 
-    protected ItemIngredient() {
-    }
+    protected ItemIngredient() {}
 
-    public ItemIngredient(MenuItem menuItem, Ingredient ingredient, BigDecimal quantity, String unit, String sizeVariant) {
+    public ItemIngredient(
+            MenuItem menuItem, Ingredient ingredient, BigDecimal quantity, String unit, String sizeVariant) {
         this.menuItem = menuItem;
         this.ingredient = ingredient;
         this.quantity = quantity;

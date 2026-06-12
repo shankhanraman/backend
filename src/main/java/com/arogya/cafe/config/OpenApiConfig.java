@@ -20,10 +20,12 @@ public class OpenApiConfig {
                         .version("0.1.0")
                         .description("Menu, inventory, and the order → KOT → stock-deduction → bill workflow."))
                 .addSecurityItem(new SecurityRequirement().addList(scheme))
-                .components(new Components().addSecuritySchemes(scheme,
-                        new SecurityScheme()
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
+                .components(new Components()
+                        .addSecuritySchemes(
+                                scheme,
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
     }
 }

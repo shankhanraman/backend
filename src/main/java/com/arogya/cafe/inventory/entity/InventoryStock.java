@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -16,6 +17,15 @@ import java.time.Instant;
 @Entity
 @Table(name = "inventory_stock")
 public class InventoryStock extends BaseEntity {
+
+    /**
+     * Optimistic lock: two concurrent KOT-prepare deductions on the same ingredient can't both
+     * commit — the second commit fails with an OptimisticLockException instead of silently
+     * overwriting the first and losing a deduction. Guards stock-math correctness under concurrency.
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
 
     @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "ingredient_id", nullable = false, unique = true)
@@ -30,8 +40,7 @@ public class InventoryStock extends BaseEntity {
     @Column(name = "last_updated", nullable = false)
     private Instant lastUpdated = Instant.now();
 
-    protected InventoryStock() {
-    }
+    protected InventoryStock() {}
 
     public InventoryStock(Ingredient ingredient, BigDecimal qtyOnHand, BigDecimal reorderThreshold) {
         this.ingredient = ingredient;
@@ -43,6 +52,10 @@ public class InventoryStock extends BaseEntity {
     @Transient
     public boolean isLow() {
         return qtyOnHand.compareTo(reorderThreshold) <= 0;
+    }
+
+    public long getVersion() {
+        return version;
     }
 
     public Ingredient getIngredient() {

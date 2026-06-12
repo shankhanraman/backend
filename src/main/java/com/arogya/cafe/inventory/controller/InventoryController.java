@@ -1,10 +1,10 @@
 package com.arogya.cafe.inventory.controller;
-import com.arogya.cafe.inventory.service.*;
 
 import com.arogya.cafe.inventory.dto.InventoryDtos.CreateStockRequest;
 import com.arogya.cafe.inventory.dto.InventoryDtos.RestockRequest;
 import com.arogya.cafe.inventory.dto.InventoryDtos.StockResponse;
 import com.arogya.cafe.inventory.dto.InventoryDtos.StockTransactionResponse;
+import com.arogya.cafe.inventory.service.*;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
@@ -51,12 +51,13 @@ public class InventoryController {
     @GetMapping("/{ingredientId}/transactions")
     public List<StockTransactionResponse> transactions(@PathVariable Long ingredientId) {
         return service.transactionsForIngredient(ingredientId).stream()
-                .map(StockTransactionResponse::from).toList();
+                .map(StockTransactionResponse::from)
+                .toList();
     }
 
     @PostMapping("/{ingredientId}/restock")
-    public StockResponse restock(@PathVariable Long ingredientId, @Valid @RequestBody RestockRequest req,
-                                 Principal principal) {
+    public StockResponse restock(
+            @PathVariable Long ingredientId, @Valid @RequestBody RestockRequest req, Principal principal) {
         String by = "Restock by " + (principal != null ? principal.getName() : "system");
         return StockResponse.from(service.restock(ingredientId, req, by));
     }

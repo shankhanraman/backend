@@ -1,7 +1,7 @@
 package com.arogya.cafe.security.service;
-import com.arogya.cafe.security.repository.StaffRepository;
-import com.arogya.cafe.security.entity.Staff;
 
+import com.arogya.cafe.security.entity.Staff;
+import com.arogya.cafe.security.repository.StaffRepository;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -28,7 +28,8 @@ public class StaffUserDetailsService implements UserDetailsService {
         }
         return User.withUsername(s.getUsername())
                 .password(s.getPasswordHash())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + s.getRole().name())))
+                .authorities(
+                        List.of(new SimpleGrantedAuthority("ROLE_" + s.getRole().name())))
                 .build();
     }
 }

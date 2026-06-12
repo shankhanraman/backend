@@ -13,8 +13,7 @@ public class Category extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String name;
 
-    protected Category() {
-    }
+    protected Category() {}
 
     public Category(String name) {
         this.name = name;

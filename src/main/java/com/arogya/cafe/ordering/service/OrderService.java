@@ -1,9 +1,6 @@
 package com.arogya.cafe.ordering.service;
-import com.arogya.cafe.security.entity.*;
-import com.arogya.cafe.catalog.entity.*;
-import com.arogya.cafe.ordering.repository.*;
-import com.arogya.cafe.ordering.entity.*;
 
+import com.arogya.cafe.catalog.entity.*;
 import com.arogya.cafe.catalog.entity.MenuItem;
 import com.arogya.cafe.catalog.repository.MenuItemRepository;
 import com.arogya.cafe.common.enums.KotStatus;
@@ -14,6 +11,9 @@ import com.arogya.cafe.common.exception.NotFoundException;
 import com.arogya.cafe.ordering.dto.OrderingDtos.CreateOrderRequest;
 import com.arogya.cafe.ordering.dto.OrderingDtos.CustomerRequest;
 import com.arogya.cafe.ordering.dto.OrderingDtos.OrderResponse;
+import com.arogya.cafe.ordering.entity.*;
+import com.arogya.cafe.ordering.repository.*;
+import com.arogya.cafe.security.entity.*;
 import com.arogya.cafe.security.entity.Staff;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -32,8 +32,13 @@ public class OrderService {
     private final BillRepository bills;
     private final MenuItemRepository menuItems;
 
-    public OrderService(CustomerRepository customers, OrderRepository orders, OrderLineRepository orderLines,
-                        KotRepository kots, BillRepository bills, MenuItemRepository menuItems) {
+    public OrderService(
+            CustomerRepository customers,
+            OrderRepository orders,
+            OrderLineRepository orderLines,
+            KotRepository kots,
+            BillRepository bills,
+            MenuItemRepository menuItems) {
         this.customers = customers;
         this.orders = orders;
         this.orderLines = orderLines;
@@ -77,10 +82,11 @@ public class OrderService {
 
         List<OrderLine> lines = new ArrayList<>();
         for (var lineReq : req.lines()) {
-            MenuItem menuItem = menuItems.findById(lineReq.menuItemId())
+            MenuItem menuItem = menuItems
+                    .findById(lineReq.menuItemId())
                     .orElseThrow(() -> new NotFoundException("MenuItem " + lineReq.menuItemId() + " not found"));
-            lines.add(orderLines.save(new OrderLine(
-                    order, menuItem, lineReq.sizeVariant(), lineReq.quantity(), menuItem.getPrice())));
+            lines.add(orderLines.save(
+                    new OrderLine(order, menuItem, lineReq.sizeVariant(), lineReq.quantity(), menuItem.getPrice())));
         }
 
         BigDecimal total = lines.stream().map(OrderLine::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -111,8 +117,8 @@ public class OrderService {
      * Mark an order served. Allowed only once the KOT is PREPARED. Performed by a server.
      */
     public OrderResponse markServed(Long orderId, Staff server) {
-        Order order = orders.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order " + orderId + " not found"));
+        Order order =
+                orders.findById(orderId).orElseThrow(() -> new NotFoundException("Order " + orderId + " not found"));
         Kot kot = kots.findByOrderId(orderId);
         if (kot == null) {
             throw new NotFoundException("No KOT for order " + orderId);

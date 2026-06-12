@@ -16,8 +16,7 @@ public class Supplier extends BaseEntity {
     @Column(nullable = false)
     private String contact;
 
-    protected Supplier() {
-    }
+    protected Supplier() {}
 
     public Supplier(String name, String contact) {
         this.name = name;

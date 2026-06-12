@@ -1,9 +1,7 @@
 package com.arogya.cafe.inventory.service;
-import com.arogya.cafe.inventory.repository.*;
-import com.arogya.cafe.inventory.entity.*;
 
-import com.arogya.cafe.catalog.repository.IngredientRepository;
 import com.arogya.cafe.catalog.entity.ItemIngredient;
+import com.arogya.cafe.catalog.repository.IngredientRepository;
 import com.arogya.cafe.catalog.repository.ItemIngredientRepository;
 import com.arogya.cafe.common.enums.StockTransactionType;
 import com.arogya.cafe.common.exception.BusinessRuleException;
@@ -12,6 +10,8 @@ import com.arogya.cafe.common.exception.NotFoundException;
 import com.arogya.cafe.inventory.dto.InventoryDtos.CreateStockRequest;
 import com.arogya.cafe.inventory.dto.InventoryDtos.RestockRequest;
 import com.arogya.cafe.inventory.dto.InventoryDtos.SupplierRequest;
+import com.arogya.cafe.inventory.entity.*;
+import com.arogya.cafe.inventory.repository.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,9 +35,12 @@ public class StockService {
     private final IngredientRepository ingredients;
     private final ItemIngredientRepository itemIngredients;
 
-    public StockService(InventoryStockRepository stocks, StockTransactionRepository transactions,
-                        SupplierRepository suppliers, IngredientRepository ingredients,
-                        ItemIngredientRepository itemIngredients) {
+    public StockService(
+            InventoryStockRepository stocks,
+            StockTransactionRepository transactions,
+            SupplierRepository suppliers,
+            IngredientRepository ingredients,
+            ItemIngredientRepository itemIngredients) {
         this.stocks = stocks;
         this.transactions = transactions;
         this.suppliers = suppliers;
@@ -62,7 +65,8 @@ public class StockService {
 
     // ---- Stock CRUD / queries ----
     public InventoryStock createStock(CreateStockRequest req) {
-        var ingredient = ingredients.findById(req.ingredientId())
+        var ingredient = ingredients
+                .findById(req.ingredientId())
                 .orElseThrow(() -> new NotFoundException("Ingredient " + req.ingredientId() + " not found"));
         if (stocks.findByIngredientId(req.ingredientId()) != null) {
             throw new BusinessRuleException("Ingredient " + req.ingredientId() + " already has a stock record");
@@ -118,7 +122,8 @@ public class StockService {
         Map<Long, InventoryStock> touched = new LinkedHashMap<>();
         for (ConsumptionLine line : lines) {
             List<ItemIngredient> recipe = itemIngredients.findByMenuItemId(line.menuItemId()).stream()
-                    .filter(ii -> ii.getSizeVariant() == null || ii.getSizeVariant().equals(line.sizeVariant()))
+                    .filter(ii ->
+                            ii.getSizeVariant() == null || ii.getSizeVariant().equals(line.sizeVariant()))
                     .toList();
             for (ItemIngredient recipeLine : recipe) {
                 BigDecimal amount = recipeLine.getQuantity().multiply(BigDecimal.valueOf(line.quantity()));
@@ -132,20 +137,25 @@ public class StockService {
                 }
                 BigDecimal remaining = stock.getQtyOnHand().subtract(amount);
                 if (remaining.signum() < 0) {
-                    throw new InsufficientStockException("Not enough " + stock.getIngredient().getName()
-                            + ": have " + stock.getQtyOnHand() + ", need " + amount);
+                    throw new InsufficientStockException("Not enough "
+                            + stock.getIngredient().getName() + ": have " + stock.getQtyOnHand() + ", need " + amount);
                 }
                 stock.setQtyOnHand(remaining);
                 stock.setLastUpdated(Instant.now());
-                transactions.save(new StockTransaction(
-                        stock, StockTransactionType.CONSUMED, amount, triggeredBy, null, orderId));
+                transactions.save(
+                        new StockTransaction(stock, StockTransactionType.CONSUMED, amount, triggeredBy, null, orderId));
                 touched.put(ingredientId, stock);
             }
         }
         List<InventoryStock> result = new ArrayList<>(touched.values());
-        result.stream().filter(InventoryStock::isLow).forEach(s -> log.warn(
-                "LOW STOCK: {} at {} {} (threshold {})",
-                s.getIngredient().getName(), s.getQtyOnHand(), s.getIngredient().getUnit(), s.getReorderThreshold()));
+        result.stream()
+                .filter(InventoryStock::isLow)
+                .forEach(s -> log.warn(
+                        "LOW STOCK: {} at {} {} (threshold {})",
+                        s.getIngredient().getName(),
+                        s.getQtyOnHand(),
+                        s.getIngredient().getUnit(),
+                        s.getReorderThreshold()));
         return result;
     }
 }

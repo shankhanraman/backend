@@ -76,3 +76,22 @@
 - `docker compose up -d` + `./gradlew bootRun` → Flyway migrates, seed loads.
 - `./gradlew test` → all green.
 - Replay worked example via Swagger UI / curl (with role-based logins; assert 403 on wrong role).
+
+## Workflow harness (added 2026-06-11)
+Build/test now use the committed **Maven wrapper** (`./mvnw`, not Gradle). Tests run on **real PostgreSQL
+via Testcontainers** (H2 removed); integration tests extend `support/AbstractIntegrationTest` (shared
+container + per-test truncation). Added fitness functions (`ArchitectureFitnessTest` — money must be
+BigDecimal), `@Version` optimistic lock on `InventoryStock` (migration `V2`), and risk tests
+(billing reconciliation, migration consistency, optimistic lock). CI/CD under `.github/workflows`,
+prod stack in `docker-compose.prod.yml` + `deploy/`. Conventions in `CLAUDE.md` (root/backend/frontend);
+skills `new-domain-feature`, `flyway-migration`; a hook blocks edits to applied migrations. React+Vite+TS
+frontend scaffold under `Frontend/`. **The project must become its own git repo** for CI to run.
+
+## OPEN ISSUE — payment timing (code vs. spec conflict, found 2026-06-11)
+`OrderService.createOrder` currently marks the Bill **PAID immediately** at creation (lines ~95-97,
+"Payment is processed immediately"), contradicting (a) this worked example (Bill created **UNPAID**,
+Cashier pays later) and (b) `OrderWorkflowIntegrationTest` line 106 (`assertEquals(UNPAID, ...)`).
+Surfaced by the new Testcontainers suite (the old H2 setup wasn't catching it). 18/19 tests green; this
+one is **left failing by decision** pending a product call: revert to UNPAID-at-creation (matches this
+spec), or adopt pay-upfront and update the test + worked example. Until resolved, `./mvnw verify` is red
+on this single test.

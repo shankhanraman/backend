@@ -35,32 +35,38 @@ import com.arogya.cafe.ordering.service.KotService;
 import com.arogya.cafe.ordering.service.OrderService;
 import com.arogya.cafe.security.entity.Staff;
 import com.arogya.cafe.security.repository.StaffRepository;
+import com.arogya.cafe.support.AbstractIntegrationTest;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-/** Reproduces the quick-ref worked example end-to-end through the service layer on H2. */
+/** Reproduces the quick-ref worked example end-to-end through the service layer on real PostgreSQL. */
 @SpringBootTest
-@ActiveProfiles("test")
-class OrderWorkflowIntegrationTest {
+class OrderWorkflowIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private CatalogService catalog;
+
     @Autowired
     private StockService stock;
+
     @Autowired
     private OrderService orders;
+
     @Autowired
     private KotService kots;
+
     @Autowired
     private BillService bills;
+
     @Autowired
     private StaffRepository staffRepo;
+
     @Autowired
     private InventoryStockRepository stockRepo;
+
     @Autowired
     private StockTransactionRepository txnRepo;
 
@@ -77,10 +83,10 @@ class OrderWorkflowIntegrationTest {
 
         MenuItem badam = catalog.createMenuItem(
                 new MenuItemRequest("Badam Shake", "Regular", BigDecimal.valueOf(180), category.getId()));
-        catalog.addRecipeLine(badam.getId(),
-                new ItemIngredientRequest(premix.getId(), BigDecimal.ONE, "pcs", "Regular"));
-        catalog.addRecipeLine(badam.getId(),
-                new ItemIngredientRequest(milk.getId(), BigDecimal.valueOf(180), "ml", "Regular"));
+        catalog.addRecipeLine(
+                badam.getId(), new ItemIngredientRequest(premix.getId(), BigDecimal.ONE, "pcs", "Regular"));
+        catalog.addRecipeLine(
+                badam.getId(), new ItemIngredientRequest(milk.getId(), BigDecimal.valueOf(180), "ml", "Regular"));
 
         stock.createStock(new CreateStockRequest(premix.getId(), BigDecimal.valueOf(50), BigDecimal.valueOf(10)));
         stock.createStock(new CreateStockRequest(milk.getId(), BigDecimal.valueOf(20000), BigDecimal.valueOf(5000)));
@@ -92,7 +98,8 @@ class OrderWorkflowIntegrationTest {
 
         // ---- 1: Cashier creates the order; Bill + KOT auto-generated ----
         OrderResponse order = orders.createOrder(
-                new CreateOrderRequest(customer.getId(), List.of(new OrderLineRequest(badam.getId(), "Regular", 1)), "cash"),
+                new CreateOrderRequest(
+                        customer.getId(), List.of(new OrderLineRequest(badam.getId(), "Regular", 1)), "cash"),
                 cashier);
         assertEquals(OrderStatus.CREATED, order.status());
         assertEquals(KotStatus.PENDING, order.kot().status());
@@ -103,13 +110,18 @@ class OrderWorkflowIntegrationTest {
         KotResponse kot = kots.markPrepared(order.kot().id(), chef);
         assertEquals(KotStatus.PREPARED, kot.status());
 
-        assertEquals(0, stockRepo.findByIngredientId(premix.getId()).getQtyOnHand().compareTo(BigDecimal.valueOf(49)),
+        assertEquals(
+                0,
+                stockRepo.findByIngredientId(premix.getId()).getQtyOnHand().compareTo(BigDecimal.valueOf(49)),
                 "premix 50 -> 49");
-        assertEquals(0, stockRepo.findByIngredientId(milk.getId()).getQtyOnHand().compareTo(BigDecimal.valueOf(19820)),
+        assertEquals(
+                0,
+                stockRepo.findByIngredientId(milk.getId()).getQtyOnHand().compareTo(BigDecimal.valueOf(19820)),
                 "milk 20000 -> 19820");
 
         List<StockTransaction> consumed = txnRepo.findByOrderId(order.id()).stream()
-                .filter(t -> t.getType() == StockTransactionType.CONSUMED).toList();
+                .filter(t -> t.getType() == StockTransactionType.CONSUMED)
+                .toList();
         assertEquals(2, consumed.size(), "two CONSUMED transactions logged");
 
         // ---- 3: Server serves (allowed because KOT is prepared) ----
@@ -122,8 +134,8 @@ class OrderWorkflowIntegrationTest {
         assertEquals(OrderStatus.COMPLETED, orders.getOrder(order.id()).status());
 
         // ---- 5: Next-day restock: Milk 19,820 -> 29,820 with a RESTOCKED txn ----
-        var restocked = stock.restock(milk.getId(), new RestockRequest(BigDecimal.valueOf(10000), null),
-                "test restock");
+        var restocked =
+                stock.restock(milk.getId(), new RestockRequest(BigDecimal.valueOf(10000), null), "test restock");
         assertEquals(0, restocked.getQtyOnHand().compareTo(BigDecimal.valueOf(29820)));
 
         boolean hasRestock = stock.transactionsForIngredient(milk.getId()).stream()
@@ -134,14 +146,15 @@ class OrderWorkflowIntegrationTest {
     @Test
     void servingBeforeKotPreparedIsRejected() {
         Category category = catalog.createCategory(new CategoryRequest("Cat2"));
-        MenuItem item = catalog.createMenuItem(
-                new MenuItemRequest("Tea", "Regular", BigDecimal.valueOf(20), category.getId()));
+        MenuItem item =
+                catalog.createMenuItem(new MenuItemRequest("Tea", "Regular", BigDecimal.valueOf(20), category.getId()));
         Customer customer = orders.createCustomer(new CustomerRequest("Walk-in 2", "NA"));
         Staff cashier = staff(StaffRole.CASHIER, "cashier2");
         Staff server = staff(StaffRole.SERVER, "server2");
 
         OrderResponse order = orders.createOrder(
-                new CreateOrderRequest(customer.getId(), List.of(new OrderLineRequest(item.getId(), "Regular", 1)), "cash"),
+                new CreateOrderRequest(
+                        customer.getId(), List.of(new OrderLineRequest(item.getId(), "Regular", 1)), "cash"),
                 cashier);
 
         Throwable ex = null;

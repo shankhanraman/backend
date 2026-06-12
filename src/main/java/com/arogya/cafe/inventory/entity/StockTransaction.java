@@ -41,11 +41,15 @@ public class StockTransaction extends BaseEntity {
     @Column(name = "order_id")
     private Long orderId;
 
-    protected StockTransaction() {
-    }
+    protected StockTransaction() {}
 
-    public StockTransaction(InventoryStock inventoryStock, StockTransactionType type, BigDecimal quantity,
-                            String triggeredBy, Supplier supplier, Long orderId) {
+    public StockTransaction(
+            InventoryStock inventoryStock,
+            StockTransactionType type,
+            BigDecimal quantity,
+            String triggeredBy,
+            Supplier supplier,
+            Long orderId) {
         this.inventoryStock = inventoryStock;
         this.type = type;
         this.quantity = quantity;

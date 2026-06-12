@@ -37,8 +37,7 @@ public class Order extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "staff_id"))
     private Set<Staff> handledBy = new HashSet<>();
 
-    protected Order() {
-    }
+    protected Order() {}
 
     public Order(Customer customer) {
         this.customer = customer;

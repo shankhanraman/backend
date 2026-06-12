@@ -16,8 +16,7 @@ public class Customer extends BaseEntity {
     @Column(nullable = false)
     private String contact;
 
-    protected Customer() {
-    }
+    protected Customer() {}
 
     public Customer(String name, String contact) {
         this.name = name;

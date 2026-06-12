@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private ResponseEntity<ApiError> body(HttpStatus status, String message, HttpServletRequest req,
-                                          Map<String, String> fields) {
-        ApiError error = new ApiError(Instant.now(), status.value(), status.getReasonPhrase(),
-                message, req.getRequestURI(), fields);
+    private ResponseEntity<ApiError> body(
+            HttpStatus status, String message, HttpServletRequest req, Map<String, String> fields) {
+        ApiError error = new ApiError(
+                Instant.now(), status.value(), status.getReasonPhrase(), message, req.getRequestURI(), fields);
         return ResponseEntity.status(status).body(error);
     }
 

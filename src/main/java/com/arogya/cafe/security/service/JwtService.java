@@ -1,7 +1,6 @@
 package com.arogya.cafe.security.service;
-import com.arogya.cafe.security.repository.StaffRepository;
-import com.arogya.cafe.security.entity.Staff;
 
+import com.arogya.cafe.security.entity.Staff;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
@@ -44,7 +43,12 @@ public class JwtService {
     /** Returns the username (subject) if the token is valid, else null. */
     public String validateAndGetUsername(String token) {
         try {
-            return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject();
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
         } catch (Exception e) {
             return null;
         }
@@ -52,8 +56,12 @@ public class JwtService {
 
     public String roleOf(String token) {
         try {
-            return Jwts.parser().verifyWith(key).build()
-                    .parseSignedClaims(token).getPayload().get("role", String.class);
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("role", String.class);
         } catch (Exception e) {
             return null;
         }

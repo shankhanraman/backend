@@ -40,8 +40,7 @@ public class Kot extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "staff_id"))
     private Set<Staff> fulfilledBy = new HashSet<>();
 
-    protected Kot() {
-    }
+    protected Kot() {}
 
     public Kot(Order order) {
         this.order = order;
